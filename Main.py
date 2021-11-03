@@ -9,7 +9,7 @@ def main():
     os.environ["SDL_VIDEO_CENTERED"] = '1'
 
     pygame.init()
-    pygame.display.set_caption('Geometry test')
+    pygame.display.set_caption('Оберег')
     screen = pygame.display.set_mode((Screen_width, Screen_height))
     clock = pygame.time.Clock()
 
@@ -33,10 +33,15 @@ def main():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
-                mFx = -GRID_INIT_POS[0] + mx # Конкретно здесь выступает как rows
-                mFy = -GRID_INIT_POS[1] + my # Конкретно здесь выступает как cols
+                # Для того, чтобы перейти в систему отсчета связанную с представлением нашего поля, где первый индекс
+                # соответствует rows, а второй columns (в pygame my идет вдоль rows, а mx идет вдоль columns)
+                # далее поменем местами координат pygame местами
+                mFy = -GRID_INIT_POS[0] + mx # Конкретно здесь выступает как rows
+                mFx = -GRID_INIT_POS[1] + my # Конкретно здесь выступает как cols
                 Xind = int(mFx // GRID_STEP_SIZE)
                 Yind = int(mFy // GRID_STEP_SIZE)
+                print(Xind)
+                print(Yind)
 
                 # print([Xind, Yind])
                 if cellSelected == (Xind, Yind):
@@ -46,26 +51,25 @@ def main():
                     cellSelected = (Xind, Yind)
                     playerClicks.append(cellSelected)
                 if len(playerClicks) == 2:
-                    # print(playerClicks)
                     move = Move(playerClicks[0], playerClicks[1], gs.get_board())
-                    print(move.constructMove())
                     if move in validMoves:
-                        print(validMoves)
                         gs.makeMove(move)
                         moveMade = True
-
-
-                    cellSelected = ()
-                    playerClicks = []
+                        cellSelected = () # обнуляет клики пользователя
+                        playerClicks = []
+                    else:
+                        playerClicks = [cellSelected] # сохраняем последний клик, для того
 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_z: # Отменяем последний ход, нажатием на кнопку K_z
+                if event.key == pygame.K_z: # Отменяем последний ход, нажатием на кнопку z
                     gs.undoMove()
-                    gs.getValidMoves()
+                    # gs.getValidMoves()
 
         if moveMade:
+            print(f'Move made')
             validMoves = gs.getValidMoves()
             moveMade = False
+            # gs.print_gs()
 
         pgDrawField(screen)
         gs.DrawFigures(screen)

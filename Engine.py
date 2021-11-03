@@ -13,13 +13,13 @@ class Move():
         self.startCol = startCell[1]
         self.endRow = endCell[0]
         self.endCol = endCell[1]
-        self.figureMoved = board[self.startCol, self.startRow]
-        self.figureCaptured = board[self.endCol, self.endRow]
+        self.figureMoved = board[self.startRow, self.startCol]
+        self.figureCaptured = board[self.endRow, self.endCol]
         self.moveID = self.startRow * 1000 + self.startCol*100 + self.endRow*10+self.endCol
         # print(f'moveID={self.moveID}')
 
     def __str__(self):
-        return self.moveID
+        return str(self.moveID)
 
     def __eq__(self, other):
         if isinstance(other, Move):
@@ -58,74 +58,94 @@ class GameState(object):
     def set_board(self, board : np.ndarray):
         self.__board = board
 
+    def print_gs(self):
+        print(f'Turn={self.__Turn}')
+        print(self.__board)
+
     def makeMove(self, move : Move):
-        self.__board[move.startCol, move.startRow] = 0
-        self.__board[move.endCol, move.endRow] = move.figureMoved
+        self.__board[move.startRow, move.startCol] = 0
+        self.__board[move.endRow, move.endCol] = move.figureMoved
         self.__MoveLog.append(move)
         self.__Turn = not self.__Turn
 
     def undoMove(self):
-        move = self.__MoveLog.pop()
-        self.__board[move.startCol, move.startRow] = move.figureMoved
-        self.__board[move.endCol, move.endRow] = move.figureCaptured
-        self.__Turn = not self.__Turn
+        try:
+            move = self.__MoveLog.pop()
+            self.__board[move.startRow, move.startCol] = move.figureMoved
+            self.__board[move.endRow, move.endCol] = move.figureCaptured
+            self.__Turn = not self.__Turn
+        except IndexError:
+            print(f'Нечего отменять')
 
     def getValidMoves(self):
         return self.getAllPossibleMoves()
 
 
     def getAllPossibleMoves(self):
-        # moves = [Move((5,4),(5,5),self.__board)]
+        # moves = [Move((5,4),(5,5),self.__board),Move((5,5),(5,4),self.__board)]
         moves = []
         for i in range(RC_NUMBER):
             for j in range(RC_NUMBER):
                 figure = self.__board[i,j]
-                if figure == 3:
-                    self.getAttackerMoves(i,j,moves)
-                if figure == 2:
-                    self.getDefenderMoves(i,j,moves)
-                if figure == 1:
-                    self.getKingMoves(i,j,moves)
-
+                # print(f'fig={figure}')
+                if self.__Turn == True:
+                    if figure == 2:
+                        self.getDefenderMoves(i, j, moves)
+                    if figure == 1:
+                        print(f'i={i}')
+                        print(f'j={j}')
+                        print(f'yESSSSSS')
+                        self.getKingMoves(i, j, moves)
+                else:
+                    if figure == 3:
+                        self.getAttackerMoves(i,j,moves)
+        print(f'moves:')
+        counter = 0
+        for move in moves:
+            if counter == 11:
+                print()
+                counter = 0
+            print(move, end=' ')
+            counter += 1
+        print()
+        # self.print_board()
 
         return moves
 
     def getDotMoves(self,i,j,moves):
         '''Определяет все движения для простой фигуры атакющего или защищающегося'''
-        # Движение по строке влево от фигуры
+        # Движение по столбцу вверх(то есть движение по строкам к 0) от фигуры
         for x in range(i - 1, -1, -1):
             if self.__board[x, j] == 0:
                 moves.append(Move((i, j), (x, j), self.__board))
             else:
                 break
-        # Движение по строке вправо от фигуры
+        # Движение по столбцу виниз(то есть движение по строкам к RC_NUMBER) от фигуры
         for x in range(i + 1, RC_NUMBER, 1):
             if self.__board[x, j] == 0:
                 moves.append(Move((i, j), (x, j), self.__board))
             else:
                 break
-        # Движение по столбцу вверх от фигуры
+        # Движение по строке влево(то есть движение по столбцам к 0) от фигуры
         for x in range(j - 1, -1, -1):
             if self.__board[i, x] == 0:
                 moves.append(Move((i, j), (i, x), self.__board))
             else:
                 break
-        # Движение по столбцу вниз от фигуры
+        # Движение по строке вправо(то есть движение по столбцам к RC_NUMBER) от фигуры
         for x in range(j + 1, RC_NUMBER, 1):
             if self.__board[i, x] == 0:
                 moves.append(Move((i, j), (i, x), self.__board))
             else:
                 break
 
-
-
     def getAttackerMoves(self,i,j,moves):
-        if not self.__Turn:
+
             self.getDotMoves(i,j,moves)
 
 
     def getDefenderMoves(self,i,j,moves):
-        if self.__Turn:
+
             self.getDotMoves(i,j,moves)
 
 
@@ -135,25 +155,25 @@ class GameState(object):
         maxc = max(RC_NUMBER, j+3)
         minc = min(0, j-3)
 
-        # Движение по строке влево от короля
+        # Движение по столбцу вверх от короля (по строкам к minr)
         for x in range(i - 1, minr, -1):
             if self.__board[x, j] == 0:
                 moves.append(Move((i, j), (x, j), self.__board))
             else:
                 break
-        # Движение по строке вправо от короля
+        # Движение по столбцу вниз от короля (по строкам к maxr)
         for x in range(i + 1, maxr, 1):
             if self.__board[x, j] == 0:
                 moves.append(Move((i, j), (x, j), self.__board))
             else:
                 break
-        # Движение по столбцу вверх от короля
+        # Движение по строке вправо от короля (по строкам к minc)
         for x in range(j - 1, minc, -1):
             if self.__board[i, x] == 0:
                 moves.append(Move((i, j), (i, x), self.__board))
             else:
                 break
-        # Движение по столбцу вниз от короля
+        # Движение по строке вправо от короля (по строкам к maxc)
         for x in range(j + 1, maxc, 1):
             if self.__board[i, x] == 0:
                 moves.append(Move((i, j), (i, x), self.__board))
