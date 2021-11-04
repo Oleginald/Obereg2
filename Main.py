@@ -23,6 +23,7 @@ def main():
     running = True
     cellSelected = () # Флаг - выбрана ячейка или нет. Изначально ничего не выделено
     playerClicks = [] #
+    win_condition = 0
     while running:
         screen.fill(COLORS['BACKGROUND'])
         # print(buttonExit.get_flag())
@@ -66,12 +67,14 @@ def main():
                     # gs.getValidMoves()
 
         if moveMade:
+            gs.deleteFigures()
             print(f'Move made')
             validMoves = gs.getValidMoves()
             moveMade = False
-            # gs.print_gs()
+            gs.print_gs()
 
         pgDrawField(screen)
+        gs.highlightCells(screen,validMoves,cellSelected)
         gs.DrawFigures(screen)
 
         pygame.display.flip()

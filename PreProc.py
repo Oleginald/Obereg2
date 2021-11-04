@@ -8,9 +8,9 @@ import tkinter
 import tkinter.filedialog
 
 # Все цвета используемые для отображения
-COLORS = {'BACKGROUND':[26,5,80], 'BACK_RECT' : [63,7,98], 'LINE' : [221,7,232], 'EXIT_RECT' : [95,111,224], 'THRONE' : [153, 255, 255]}
+COLORS = {'BACKGROUND':[26,5,80], 'BACK_RECT' : [63,7,98], 'LINE' : [221,7,232], 'EXIT_RECT' : [95,111,224], 'THRONE' : [153, 255, 255], 'HIGHLIGHT_YELLOW' : [248, 3, 252], 'HIGHLIGHT_BLUE' : [3,144,252]}
 FPS = 30
-MULTIPLIER = 1
+MULTIPLIER = 1.3
 # Преопределим переменные, отвечающие за размер экрана здесь
 Screen_width, Screen_height = int(MULTIPLIER*GetSystemMetrics(1)), int(0.75*MULTIPLIER*GetSystemMetrics(1))
 
@@ -26,6 +26,7 @@ RLC_COORDS = (Screen_width * 0.275, Screen_width * 0.55)
 LLC_COORDS = (Screen_width * 0.675, Screen_width * 0.55)
 # Координаты центра
 TC_COORDS = (Screen_width * 0.475, Screen_width * 0.35)
+
 
 # Загрузим необходимые изображения
 IMAGES = {}
