@@ -92,15 +92,6 @@ def main():
                         moveMade = False
 
 
-                    if event.key == pygame.K_r: # Отменяем последний ход, нажатием на кнопку z
-                        gs = GameState(GameState.DEFAULT_STATE)
-                        gs.DrawFigures(screen)
-                        pygame.display.flip()
-                        validMoves = gs.getValidMoves()
-                        cellSelected = ()
-                        playerClicks = []
-                        moveMade = False
-
         # AI
         if not gameOver and not humanTurn:
             AIMove = ai.findBestMove(gs,validMoves,screen,clock)
