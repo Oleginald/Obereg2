@@ -1,8 +1,3 @@
-import copy
-
-import numpy as np
-import pygame
-
 from PreProc import *
 
 class Move():
@@ -17,7 +12,8 @@ class Move():
         self.figureMoved = board[self.startRow, self.startCol]
         self.figureCaptured = board[self.endRow, self.endCol]
         self.moveID = self.startRow * 1000 + self.startCol*100 + self.endRow*10+self.endCol
-        # print(f'moveID={self.moveID}')
+
+
 
     def __str__(self):
         return str(self.moveID)
@@ -31,7 +27,7 @@ class Move():
         return np.array([[self.startCol, self.startRow],
                          [self.endCol, self.endRow]])
 
-class GameState(object):
+class GameState():
     """Класс определяет поле, на котором происходит действие игры.
     Поле представляет собой сетку 9 на 9, логически заменяемую массивом 9 на 9 инициализируемого изначально 0(то есть все поле пустое).
     Значение ячейки: 0 - никакой фигуры, 1 - король, 2 - защитник, 3 - атакующий."""
@@ -57,7 +53,7 @@ class GameState(object):
                               [0,0,0,0,3,0,0,0,0]], dtype=np.int32)
 
     # Индексные области игрового поля
-    REGIONS = {'THRONE' : [4,4],
+    REGIONS = {'THRONE' : [[4,4]],
                 'NEAR_THRONE' : [[3,4],[4,5],[5,4],[4,3]],
                 'CORNERS' : [[0,0], [0,8], [8,0], [8,8]],
                 'NEAR_CORNERS' : [[1,0],[0,1],[0,7],[1,8],[7,8],[8,7],[7,0],[8,1]],
@@ -73,15 +69,29 @@ class GameState(object):
                           [6,1],[6,2],[6,3],[6,4],[6,5],[6,6],[6,7],
                           [7,1],[7,2],[7,3],[7,4],[7,5],[7,6],[7,7]]}
 
-    def __init__(self, board = TEST_STATE):
+    def __init__(self, board = DEFAULT_STATE):
         self.__board = board
         self.__Turn = False # Чей ход. True - защитники. False - атакующие. Начинают атакующие
-        self.__DeleteLog = [] # запись удаленных фигур
+
         self.__MoveLog = [] # Запись произошедших ходов
+        self.__DeleteLog = [] # запись удаленных фигур, ведется соответственно MoveLog, т.е. они одинаковой длины
+
         self.kingLocation = np.array([4,4])
+        self.__stalemate = False # не используется пока что
+        self.__win = False # состояние окончания игры по причинам описанным в checkWinCondition
+        self.__moveMade = False
 
     def __str__(self):
         return str(self.__board)
+
+    def get_win(self):
+        return self.__win
+
+    def get_stalemate(self):
+        return self.__stalemate
+
+    def set_stalemate(self, cond : bool):
+        self.__stalemate = cond
 
     def get_board(self):
         return self.__board
@@ -92,11 +102,17 @@ class GameState(object):
     def get_turn(self):
         return self.__Turn
 
+    def get_MoveLog(self):
+        return self.__MoveLog
+
     def print_gs(self):
+        print(f'Win={self.__win}')
         print(f'Turn={self.__Turn}')
+        print(f'MoveLog={self.__MoveLog}')
+        print(f'DeleteLog={self.__DeleteLog}')
         print(self.__board)
 
-    def makeMove(self, move : Move):
+    def makeMove(self, move : Move, screen, clock, animate : bool, checkWC : bool):
         self.__board[move.startRow, move.startCol] = 0
         self.__board[move.endRow, move.endCol] = move.figureMoved
         self.__MoveLog.append(move)
@@ -104,18 +120,55 @@ class GameState(object):
         # Обновим позицию короля вперед
         if move.figureMoved == 1:
             self.kingLocation = (move.endRow, move.endCol)
+        # Изначально эти две функции были расписаны в файле Main:
+        # deleteFigures было внутри if moveMade перед validMoves = gs.getValidMoves(), а animateMove было перед deleteFigures
+        if animate:
+            self.animateMove(screen,move,clock) # анимируем наше перемещение фишки
+        self.deleteFigures() # затем удаляем фигуру/ы на поле по окончанию анимации
+        if checkWC:
+            self.checkWinCondition() # проверяем закончилась игра или нет
+        # print(f'Win Condition checked')
+        # self.print_gs()
 
     def undoMove(self):
-        try:
-            move = self.__MoveLog.pop()
-            self.__board[move.startRow, move.startCol] = move.figureMoved
-            self.__board[move.endRow, move.endCol] = move.figureCaptured
-            self.__Turn = not self.__Turn
-            # обновляем позицию короля назад
-            if move.figureMoved == 1:
-                self.kingLocation = (move.startRow, move.startCol)
-        except IndexError:
-            print(f'Нечего отменять')
+        # Удаляем ход из мув лога
+        move = self.__MoveLog.pop()
+        # Восстанавливаем позиции ПЕРЕДВИНУТЫХ фигур
+        self.__board[move.startRow, move.startCol] = move.figureMoved
+        self.__board[move.endRow, move.endCol] = move.figureCaptured
+
+        # Удаляем запись из удаленных фигуру
+        figuresDeleted = self.__DeleteLog.pop()
+        # Восстанавливаем УДАЛЕННЫЕ фигуры
+        for figure in figuresDeleted:
+            self.__board[figure[0], figure[1]] = figure[2]
+
+
+        self.__Turn = not self.__Turn
+        # обновляем позицию короля назад, возможно нижние две строчки и не понадобятся, оставлю их пока что
+        if move.figureMoved == 1:
+            self.kingLocation = (move.startRow, move.startCol)
+
+        # try:
+        #     # Удаляем ход из мув лога
+        #     move = self.__MoveLog.pop()
+        #     # Восстанавливаем позиции ПЕРЕДВИНУТЫХ фигур
+        #     self.__board[move.startRow, move.startCol] = move.figureMoved
+        #     self.__board[move.endRow, move.endCol] = move.figureCaptured
+        #
+        #     # Удаляем запись из удаленных фигуру
+        #     figuresDeleted = self.__DeleteLog.pop()
+        #     #Восстанавливаем УДАЛЕННЫЕ фигуры
+        #     for figure in figuresDeleted:
+        #         self.__board[figure[0],figure[1]] = figure[3]
+        #
+        #     self.__Turn = not self.__Turn
+        #     # обновляем позицию короля назад, возможно нижние две строчки и не понадобятся, оставлю их пока что
+        #     if move.figureMoved == 1:
+        #         self.kingLocation = (move.startRow, move.startCol)
+        #
+        # except IndexError:
+        #     print(f'Нечего отменять')
 
     # def getValidMoves(self):
     #     # 1 Сначала создадим вообще все возможные ходы защищающихся
@@ -139,28 +192,24 @@ class GameState(object):
         for i in range(RC_NUMBER):
             for j in range(RC_NUMBER):
                 figure = self.__board[i,j]
-                # print(f'fig={figure}')
                 if self.__Turn == True:
                     if figure == 2:
                         self.getDefenderMoves(i, j, moves)
                     if figure == 1:
-                        # print(f'i={i}')
-                        # print(f'j={j}')
-                        # print(f'yESSSSSS')
                         self.getKingMoves(i, j, moves)
                 else:
                     if figure == 3:
                         self.getAttackerMoves(i,j,moves)
         #Печать возможных ходов
-        print(f'moves:')
-        counter = 0
-        for move in moves:
-            if counter == 11:
-                print()
-                counter = 0
-            print(move, end=' ')
-            counter += 1
-        print()
+        # print(f'moves:')
+        # counter = 0
+        # for move in moves:
+        #     if counter == 11:
+        #         print()
+        #         counter = 0
+        #     print(move, end=' ')
+        #     counter += 1
+        # print()
         # self.print_board()
 
         return moves
@@ -279,10 +328,6 @@ class GameState(object):
         if [i,j] in GameState.REGIONS['NEAR_CORNERS']:
             return self.DotCornerDeletable(adot,i,j)
         elif [i,j] == [4,4]:
-            print('YESSSSSSS')
-            print(f'[4,3]={self.__board[4,3]}')
-            print(f'[3,4]={self.__board[3,4]}')
-            print(f'[3,4]={self.__board[3, 4]}')
             # все 4 ячейки вокруг заняты атакующими
             c1 = self.__board[4,3] in adot
             c2 = self.__board[3,4] in adot
@@ -334,44 +379,66 @@ class GameState(object):
         return False
 
     def deleteFigures(self):
+        figuresDeleted = []
         '''Удаляет фигуры'''
         for i in range(RC_NUMBER):
             for j in range(RC_NUMBER):
-                # print(f'i={i} j={j}')
-
                 if self.__Turn:
                     if self.__board[i,j] == 1:
                         if self.KingDeletable(i,j):
+                            figuresDeleted.append([i,j,1])
                             self.__board[i,j] = 0
 
                     if self.__board[i,j] == 2:
                         if self.DefenderDeletable(i,j):
+                            figuresDeleted.append([i, j, 2])
                             self.__board[i,j] = 0
                 else:
                     if self.__board[i,j] == 3:
                         if self.AttackerDeletable(i,j):
+                            figuresDeleted.append([i, j, 3])
                             self.__board[i,j] = 0
+        self.__DeleteLog.append(figuresDeleted)
 
     def checkWinCondition(self):
-        '''Проверка __board
-        Выирыш защитников - король на поле, 0 фигур аткаующих или король в области выходов. Код 0.
-        Выигрыш атакующих - короля нет на поле. Код 1
-        Игра в процессе. Код 0'''
-        a = np.count_nonzero(self.__board == 1) # считаем количество королей на поле
-        pass
+        '''Проверка __board на конец игры'''
+        KingCount = np.count_nonzero(self.__board == 1) # считаем количество королей на поле
 
+        # Если король находится в углу
+        KingInCorner = False
+        # for cell in GameState.REGIONS['CORNERS']:
+        #     if self.__board[cell[0],cell[1]] == 1:
+        #         KingInCorner = True
+        #         break
+        if self.__board[0,0] == 1 or self.__board[0,8] == 1 or self.__board[8,0] == 1 or self.__board[8,8] == 1:
+            KingInCorner = True
+
+        if KingCount == 0 or KingInCorner:
+            # print(f'KingCount={KingCount}')
+            # print(f'KingInCorner={KingInCorner}')
+            self.__win = True
 
     def isFieldCell(self,i,j):
-        '''Определяет ячейка не выхода и не трон'''
-        if ([i,j] not in GameState.REGIONS['THRONE']) and ([i,j] not in GameState.REGIONS['CORNERS']):
+        '''Определяет ячейка не выход и не трон'''
+        if ([i,j] not in GameState.REGIONS['THRONE']) and ([i,j] not in GameState.REGIONS['CORNERS']): # почему-то не работает как надо, пропускает трон
             return True
         else:
             return False
+        # if i == 4 and j == 4:
+        #     return False
+        # elif i == 0 and j == 0:
+        #     return False
+        # elif i == 0 and j == 8:
+        #     return False
+        # elif i == 8 and j == 8:
+        #     return False
+        # elif i == 8 and j == 0:
+        #     return False
+        # else:
+        #     return True
 
     def getDotMoves(self,i,j,moves):
         '''Определяет все движения для простой фигуры атакющего или защищающегося'''
-        # Определим условия попадания на края карты и на трон
-        c1 = i
         # Движение по столбцу вверх(то есть движение по строкам к 0) от фигуры
         for x in range(i - 1, -1, -1):
             if self.__board[x, j] == 0:
@@ -382,7 +449,7 @@ class GameState(object):
         # Движение по столбцу виниз(то есть движение по строкам к RC_NUMBER) от фигуры
         for x in range(i + 1, RC_NUMBER, 1):
             if self.__board[x, j] == 0:
-                if self.isFieldCell(x, j):
+                if self.isFieldCell(x,j):
                     moves.append(Move((i, j), (x, j), self.__board))
             else:
                 break
@@ -412,10 +479,10 @@ class GameState(object):
 
 
     def getKingMoves(self, i, j, moves):
-        maxr = max(RC_NUMBER, i+3)
-        minr = min(0, i-3)
-        maxc = max(RC_NUMBER, j+3)
-        minc = min(0, j-3)
+        maxr = min(RC_NUMBER, i+4)
+        minr = max(-1, i-4)
+        maxc = min(RC_NUMBER, j+4)
+        minc = max(-1, j-4)
 
         # Движение по столбцу вверх от короля (по строкам к minr)
         for x in range(i - 1, minr, -1):
@@ -456,6 +523,29 @@ class GameState(object):
                     if move.startRow == i and move.startCol == j:
                         screen.blit(s, (GRID_INIT_POS[0]+GRID_STEP_SIZE * move.endCol, GRID_INIT_POS[1]+GRID_STEP_SIZE * move.endRow))
 
+    def animateMove(self, screen, move, clock):
+        coords = [] # массив координат, через которые должна пройти фигура при движении
+        di = move.endRow - move.startRow # составляющая манхэттоновского расстояния по строкам
+        dj = move.endCol - move.startCol # составляющая манхэттоновского расстояния по столбцам
+        framesPerCell = 5 # количество кадров внутри одной ячейки
+        frameCount = (np.abs(di) + np.abs(dj)) * framesPerCell # общее количество кадров(общее количество раз сколько надо отрисовать фигуру(каждый раз в разном положении(движени от начала к концу)))
+
+        for frame in range(frameCount + 1):
+            i,j = (move.startRow + di * frame/frameCount, move.startCol + dj*frame/frameCount)
+            pgDrawField(screen)
+            self.DrawFigures(screen)
+            color = COLORS['HIGHLIGHT_LBLUE']
+            endCell = pygame.Rect((GRID_INIT_POS[0]+THICKNESS+move.endCol*GRID_STEP_SIZE, GRID_INIT_POS[1]+THICKNESS+move.endRow*GRID_STEP_SIZE), (GRID_STEP_SIZE-THICKNESS,GRID_STEP_SIZE-THICKNESS))
+            pygame.draw.rect(screen,color,endCell)
+
+            if move.figureCaptured != 0:
+                figureCapturedName = numberToFigure(move.figureCaptured)
+                screen.blit(IMAGES[figureCapturedName])
+
+            figureMovedName = numberToFigure(move.figureMoved)
+            screen.blit(IMAGES[figureMovedName], pygame.Rect((GRID_INIT_POS[0]+THICKNESS+j*GRID_STEP_SIZE, GRID_INIT_POS[1]+THICKNESS+i*GRID_STEP_SIZE), (GRID_STEP_SIZE-THICKNESS,GRID_STEP_SIZE-THICKNESS)))
+            pygame.display.flip()
+            clock.tick(FPS)
 
     def DrawFigures(self, screen):
         for i in range(RC_NUMBER):
@@ -471,19 +561,3 @@ class GameState(object):
                 if self.__board[i,j] == 1:
                     screen.blit(IMAGES['king'],
                                 pygame.Rect(pos, (int(Screen_width * 0.05), int(Screen_width * 0.05))))
-
-# def highlightCells(screen, gs : GameState, validMoves : list, sqSelected : tuple):
-#     if sqSelected != ():
-#         i,j = sqSelected
-#         if gs.get_board()[i,j] == (1 or 2 if gs.get_turn() else 3): #проверка: выбранная нами ячейка, содержит фигуру в соответствующий ход
-#             s = pygame.Surface((GRID_STEP_SIZE,GRID_STEP_SIZE))
-#             s.set_alpha(100) #прозрачность: если 0 то полностью прозрачный, если 255 то непрозрачный
-#             s.fill(COLORS['HIGHLIGHT'])
-#             screen.blit(s, (i*GRID_STEP_SIZE, j*GRID_STEP_SIZE))
-#             #Выше мы подсветили выбранную ячейку, далее подсветим ячейки допустимые к ходу с этой ячейками
-#             s.fill(COLORS['HIGHLIGHT'])
-#             for move in validMoves:
-#                 if move.startRow == i and move.startCol == j:
-#                     screen.blit(s,(GRID_STEP_SIZE*move.endRow, GRID_STEP_SIZE*move.endCol))
-
-

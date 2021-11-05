@@ -6,10 +6,15 @@ import sys
 from copy import deepcopy, copy
 import tkinter
 import tkinter.filedialog
+import copy
 
 # Все цвета используемые для отображения
-COLORS = {'BACKGROUND':[26,5,80], 'BACK_RECT' : [63,7,98], 'LINE' : [221,7,232], 'EXIT_RECT' : [95,111,224], 'THRONE' : [153, 255, 255], 'HIGHLIGHT_YELLOW' : [248, 3, 252], 'HIGHLIGHT_BLUE' : [3,144,252]}
-FPS = 30
+COLORS = {'BACKGROUND':[26,5,80], 'BACK_RECT' : [63,7,98], 'LINE' : [221,7,232], 'EXIT_RECT' : [95,111,224],
+          'THRONE' : [153, 255, 255], 'HIGHLIGHT_YELLOW' : [248, 3, 252], 'HIGHLIGHT_BLUE' : [3,144,252],
+          'HIGHLIGHT_LBLUE':[110,25,255], 'TEST' : [3,252,65], 'TEXT' : [245,149,66],
+          'ATTACKER' : [255,0,102], 'DEFENDER' : [254,226,174], 'HIGHLIGHTER' : [153,255,153]}
+FPS = 60
+THICKNESS = 2
 MULTIPLIER = 1.3
 # Преопределим переменные, отвечающие за размер экрана здесь
 Screen_width, Screen_height = int(MULTIPLIER*GetSystemMetrics(1)), int(0.75*MULTIPLIER*GetSystemMetrics(1))
@@ -44,6 +49,17 @@ IMAGES['king'] = pygame.transform.scale(IMAGES['king'], (int(Screen_width*0.05),
 IMAGES['defender'] = pygame.transform.scale(IMAGES['defender'], (int(Screen_width*0.05), int(Screen_width*0.05)))
 IMAGES['attacker'] = pygame.transform.scale(IMAGES['attacker'], (int(Screen_width*0.05), int(Screen_width*0.05)))
 
+def numberToFigure(a : int):
+    if a == 1:
+        return 'king'
+    elif a == 2:
+        return 'defender'
+    elif a == 3:
+        return 'attacker'
+    else:
+        return None
+
+
 def pgDrawField(screen):
     '''Отрисовывает поле'''
     # Задник
@@ -72,9 +88,15 @@ def pgDrawField(screen):
     # Линии
     for i in range(RC_NUMBER+1):
         pygame.draw.line(screen,COLORS['LINE'],(GRID_INIT_POS[0] + GRID_STEP_SIZE*i ,GRID_INIT_POS[1]),
-                         (GRID_INIT_POS[0] + GRID_STEP_SIZE*i, GRID_INIT_POS[1] + GRID_LENGTH),1)
+                         (GRID_INIT_POS[0] + GRID_STEP_SIZE*i, GRID_INIT_POS[1] + GRID_LENGTH),THICKNESS)
         pygame.draw.line(screen, COLORS['LINE'], (GRID_INIT_POS[0], GRID_INIT_POS[1] + GRID_STEP_SIZE * i),
-                         (GRID_INIT_POS[0] + GRID_LENGTH, GRID_INIT_POS[1] + GRID_STEP_SIZE * i), 1)
+                         (GRID_INIT_POS[0] + GRID_LENGTH, GRID_INIT_POS[1] + GRID_STEP_SIZE * i), THICKNESS)
+
+def drawText(screen, text):
+    font = pygame.font.SysFont("Arial",32,False,False)
+    textObject = font.render(text,0,COLORS['TEXT'])
+    textLocation = pygame.Rect(0,0,32,32)
+    screen.blit(textObject, textLocation)
 
 def DrawFigureTest(screen):
     pos = [100,100]
