@@ -101,3 +101,16 @@ def drawText(screen, text):
 def DrawFigureTest(screen):
     pos = [100,100]
     screen.blit(IMAGES['king'], pygame.Rect(pos[0], pos[1], int(Screen_width * 0.05), int(Screen_width * 0.05)))
+
+from functools import wraps
+from time import time
+
+def timing(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print('func:%r took: %2.4f sec' % (f.__name__, te-ts))
+        return result
+    return wrap

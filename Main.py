@@ -24,8 +24,8 @@ def main():
     animate = True # Если True, то анимация включена, если False, то нет
     gameOver = False
 
-    player1 = False # Если человек играет защитниками, то True. Если AI играет защитниками то False
-    player2 = False # Если человек играет атакующими, то True. Если AI играет атакующими, то Flase
+    player1 = True # Если человек играет защитниками, то True. Если AI играет защитниками то False
+    player2 = False  # Если человек играет атакующими, то True. Если AI играет атакующими, то Flase
 
     running = True
     cellSelected = () # Флаг - выбрана ячейка или нет. Изначально ничего не выделено
@@ -94,14 +94,14 @@ def main():
 
         # AI
         if not gameOver and not humanTurn:
-            AIMove = ai.findBestMove(gs,validMoves,screen,clock)
-            if AIMove is None:
+            AIMove = ai.findBestMove(3, gs, validMoves, screen, clock)
+            if AIMove is None: # Если по какой-то причине не был найден оптимальный ход, то ход рандомный
                 AIMove = ai.findRandomMove(validMoves)
             gs.makeMove(AIMove,screen,clock,animate, True)
             moveMade = True
 
         if moveMade:
-            print(f'Move made')
+            # print(f'Move made')
             validMoves = gs.getValidMoves()
             moveMade = False
 
