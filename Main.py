@@ -1,11 +1,35 @@
+import sys
+
 import pygame
 
 from PreProc import *
 from Engine import *
 from AI import *
-from GUI import *
 
-def main():
+def start():
+    '''Начальное окно взаимодействия с пользователем'''
+
+    root = Tk()
+    root.title("GUI на Python")
+    root.geometry("300x250")
+
+    var = IntVar()
+    chk = Checkbutton(root, text='foo', variable=var)
+    chk.pack(side=LEFT)
+    var.get()  # unchecked
+    print(f'var={var}')
+    def click_button():
+        mainres = main(True, True)
+        if mainres == 0:
+            print(f'ffff')
+
+    btn = Button(text="Click Me", background="#555", foreground="#ccc",
+                 padx="20", pady="8", font="16", command=click_button)
+    btn.pack()
+
+    root.mainloop()
+
+def main(player1 : bool, player2 : bool):
 
     os.environ["SDL_VIDEO_CENTERED"] = '1'
 
@@ -23,9 +47,6 @@ def main():
     moveMade = False # Если игрок сделал правильный ход, то мы будем генерировать новый список validMoves, и флаг будет True.
     animate = True # Если True, то анимация включена, если False, то нет
     gameOver = False
-
-    player1 = True # Если человек играет защитниками, то True. Если AI играет защитниками то False
-    player2 = False  # Если человек играет атакующими, то True. Если AI играет атакующими, то Flase
 
     running = True
     cellSelected = () # Флаг - выбрана ячейка или нет. Изначально ничего не выделено
@@ -109,30 +130,24 @@ def main():
         if gs.get_win():
             gameOver = True
             if not gs.get_turn():
-                drawText(screen, 'Defenders win by the King out')
+                drawText(screen, 'Defenders win by the King out', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
             else:
-                drawText(screen, 'Attackers win by eating the King')
+                drawText(screen, 'Attackers win by eating the King', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
 
         #Отображение и GUI
-        pgDrawField(screen)
-        if not gs.get_turn():
-            hlDefenders.backlight(screen, True)
-            hlAttackers.backlight(screen, False)
-        else:
-            hlDefenders.backlight(screen, False)
-            hlAttackers.backlight(screen, True)
+        pgDrawField(screen, gs.get_turn())
+
 
 
         gs.highlightCells(screen,validMoves,cellSelected)
         gs.DrawFigures(screen)
-        hlDefenders.pgDraw(screen)
-        hlAttackers.pgDraw(screen)
 
         pygame.display.flip()
 
     clock.tick(FPS)
     pygame.quit()
-
+    return 0
 
 if __name__ == "__main__":
-    main()
+    start()
+    # main(True, True)

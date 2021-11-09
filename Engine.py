@@ -132,22 +132,25 @@ class GameState():
 
     def undoMove(self):
         # Удаляем ход из мув лога
-        move = self.__MoveLog.pop()
-        # Восстанавливаем позиции ПЕРЕДВИНУТЫХ фигур
-        self.__board[move.startRow, move.startCol] = move.figureMoved
-        self.__board[move.endRow, move.endCol] = move.figureCaptured
+        try:
+            move = self.__MoveLog.pop()
+            # Восстанавливаем позиции ПЕРЕДВИНУТЫХ фигур
+            self.__board[move.startRow, move.startCol] = move.figureMoved
+            self.__board[move.endRow, move.endCol] = move.figureCaptured
 
-        # Удаляем запись из удаленных фигуру
-        figuresDeleted = self.__DeleteLog.pop()
-        # Восстанавливаем УДАЛЕННЫЕ фигуры
-        for figure in figuresDeleted:
-            self.__board[figure[0], figure[1]] = figure[2]
+            # Удаляем запись из удаленных фигуру
+            figuresDeleted = self.__DeleteLog.pop()
+            # Восстанавливаем УДАЛЕННЫЕ фигуры
+            for figure in figuresDeleted:
+                self.__board[figure[0], figure[1]] = figure[2]
 
 
-        self.__Turn = not self.__Turn
-        # обновляем позицию короля назад, возможно нижние две строчки и не понадобятся, оставлю их пока что
-        if move.figureMoved == 1:
-            self.kingLocation = (move.startRow, move.startCol)
+            self.__Turn = not self.__Turn
+            # обновляем позицию короля назад, возможно нижние две строчки и не понадобятся, оставлю их пока что
+            if move.figureMoved == 1:
+                self.kingLocation = (move.startRow, move.startCol)
+        except IndexError:
+            print(f'')
 
         # try:
         #     # Удаляем ход из мув лога
@@ -532,7 +535,7 @@ class GameState():
 
         for frame in range(frameCount + 1):
             i,j = (move.startRow + di * frame/frameCount, move.startCol + dj*frame/frameCount)
-            pgDrawField(screen)
+            pgDrawField(screen, self.__Turn)
             self.DrawFigures(screen)
             color = COLORS['HIGHLIGHT_LBLUE']
             endCell = pygame.Rect((GRID_INIT_POS[0]+THICKNESS+move.endCol*GRID_STEP_SIZE, GRID_INIT_POS[1]+THICKNESS+move.endRow*GRID_STEP_SIZE), (GRID_STEP_SIZE-THICKNESS,GRID_STEP_SIZE-THICKNESS))

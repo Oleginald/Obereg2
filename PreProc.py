@@ -4,15 +4,16 @@ from win32api import GetSystemMetrics
 import os
 import sys
 from copy import deepcopy, copy
-import tkinter
-import tkinter.filedialog
+from tkinter import *
 import copy
+from functools import wraps
+from time import time
 
 # Все цвета используемые для отображения
 COLORS = {'BACKGROUND':[26,5,80], 'BACK_RECT' : [63,7,98], 'LINE' : [221,7,232], 'EXIT_RECT' : [95,111,224],
           'THRONE' : [153, 255, 255], 'HIGHLIGHT_YELLOW' : [248, 3, 252], 'HIGHLIGHT_BLUE' : [3,144,252],
           'HIGHLIGHT_LBLUE':[110,25,255], 'TEST' : [3,252,65], 'TEXT' : [245,149,66],
-          'ATTACKER' : [255,0,102], 'DEFENDER' : [254,226,174], 'HIGHLIGHTER' : [153,255,153]}
+          'ATTACKER' : [255,0,102], 'DEFENDER' : [254,226,174], 'HIGHLIGHTER' : [153,255,153], 'FONT_LOWER' : [178,140,203]}
 FPS = 60
 THICKNESS = 2
 MULTIPLIER = 1.3
@@ -60,7 +61,7 @@ def numberToFigure(a : int):
         return None
 
 
-def pgDrawField(screen):
+def pgDrawField(screen, turn):
     '''Отрисовывает поле'''
     # Задник
     pygame.draw.rect(screen, COLORS['BACK_RECT'], pygame.Rect(Screen_width * 0.05, Screen_width * 0.075,
@@ -92,18 +93,40 @@ def pgDrawField(screen):
         pygame.draw.line(screen, COLORS['LINE'], (GRID_INIT_POS[0], GRID_INIT_POS[1] + GRID_STEP_SIZE * i),
                          (GRID_INIT_POS[0] + GRID_LENGTH, GRID_INIT_POS[1] + GRID_STEP_SIZE * i), THICKNESS)
 
-def drawText(screen, text):
-    font = pygame.font.SysFont("Arial",32,False,False)
-    textObject = font.render(text,0,COLORS['TEXT'])
-    textLocation = pygame.Rect(0,0,32,32)
+    #Бэклайтеры хода
+    hlDefenders = Backlighter((0.215 * Screen_width, 0.65 * Screen_width), (0.02 * Screen_width, 0.02 * Screen_width), COLORS['ATTACKER'])
+    hlAttackers = Backlighter((0.75 * Screen_width, 0.65 * Screen_width), (0.02 * Screen_width, 0.02 * Screen_width), COLORS['DEFENDER'])
+
+    if not turn:
+        hlDefenders.backlight(screen, True)
+        hlAttackers.backlight(screen, False)
+    else:
+        hlDefenders.backlight(screen, False)
+        hlAttackers.backlight(screen, True)
+
+    hlDefenders.pgDraw(screen)
+    hlAttackers.pgDraw(screen)
+
+    # Текст возле Бэклайтеров
+    drawText(screen, 'attacker', (0.1*Screen_width,0.64*Screen_width), (0.3*Screen_width,0.1*Screen_width), COLORS['FONT_LOWER'], int(0.03*Screen_width))
+    drawText(screen, 'defender', (0.79 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.03 * Screen_width))
+
+    #Андербар под полем
+    pygame.draw.line(screen, COLORS['LINE'], (0.375 * Screen_width, 0.625 * Screen_width),
+                         (0.625 * Screen_width, 0.625 * Screen_width),2*THICKNESS)
+
+
+
+
+def drawText(screen, text, pos, size, color, fs):
+    font = pygame.font.SysFont("Arial",fs,False,False)
+    textObject = font.render(text,True,color)
+    textLocation = pygame.Rect(pos,size)
     screen.blit(textObject, textLocation)
 
 def DrawFigureTest(screen):
     pos = [100,100]
     screen.blit(IMAGES['king'], pygame.Rect(pos[0], pos[1], int(Screen_width * 0.05), int(Screen_width * 0.05)))
-
-from functools import wraps
-from time import time
 
 def timing(f):
     @wraps(f)
@@ -114,3 +137,17 @@ def timing(f):
         print('func:%r took: %2.4f sec' % (f.__name__, te-ts))
         return result
     return wrap
+
+class Backlighter():
+
+    def __init__(self, pos : np.ndarray, size : np.ndarray, color : list):
+        self.__pos = pos
+        self.__size = size
+        self.__color = color
+
+    def backlight(self,screen, backlight = False):
+        if backlight:
+            pygame.draw.rect(screen, COLORS['HIGHLIGHTER'],  pygame.Rect(int(self.__pos[0] - 0.125*self.__size[0]), int(self.__pos[1] - 0.125*self.__size[1]), int(1.25*self.__size[0]), int(1.25*self.__size[1])))
+
+    def pgDraw(self,screen):
+        pygame.draw.rect(screen, self.__color, pygame.Rect(int(self.__pos[0]), int(self.__pos[1]), int(self.__size[0]), int(self.__size[1])))
