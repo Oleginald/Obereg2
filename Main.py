@@ -4,56 +4,58 @@ from AI import *
 
 def start():
     '''Начальное окно взаимодействия с пользователем'''
+    try:
+        root = Tk()
+        root.title("GUI на Python")
+        root.geometry("300x250")
 
-    root = Tk()
-    root.title("GUI на Python")
-    root.geometry("300x250")
-
-    global player1
-    global player2
-    player1 = True
-    player2 = False
-
-    def isChecked1():
-        print(f'check1')
         global player1
-        if var1.get() == False:
-            player1 = False
-        else:
-            player1 = True
-        print(f'p1={player1}')
-
-    def isChecked2():
-        print(f'check2')
         global player2
-        if var2.get() == False:
-            player2 = False
-        else:
-            player2 = True
-        print(f'p2={player2}')
+        player1 = True
+        player2 = True
 
-    var1 = BooleanVar()
-    chk1 = Checkbutton(root, text='Выберите, если за 1-го игрока играет ИИ', variable=var1, onvalue=True, offvalue=False, command=isChecked1)
-    chk1.deselect()
-    chk1.pack()
+        def isChecked1():
+            print(f'check1')
+            global player1
+            if var1.get() == True:
+                player1 = False
+            else:
+                player1 = True
+            print(f'p1={player1}')
 
-    var2 = BooleanVar()
-    chk2 = Checkbutton(root, text='Выберите, если за 2-го игрока играет ИИ', variable=var2, onvalue=True, offvalue=False, command=isChecked2)
-    chk2.deselect()
-    chk2.pack()
+        def isChecked2():
+            print(f'check2')
+            global player2
+            if var2.get() == True:
+                player2 = False
+            else:
+                player2 = True
+            print(f'p2={player2}')
+
+        var1 = BooleanVar()
+        chk1 = Checkbutton(root, text='Выберите, если за 1-го игрока играет ИИ', variable=var1, onvalue=True, offvalue=False, command=isChecked1)
+        chk1.deselect()
+        chk1.pack()
+
+        var2 = BooleanVar()
+        chk2 = Checkbutton(root, text='Выберите, если за 2-го игрока играет ИИ', variable=var2, onvalue=True, offvalue=False, command=isChecked2)
+        chk2.deselect()
+        chk2.pack()
 
 
-    def click_button():
+        def click_button():
 
-        mainres = main(player1, player2, False)
-        if mainres == 0:
-            print(f'Программа завершено успешно.')
+            mainres = main(player1, player2, False)
+            if mainres == 0:
+                print(f'Программа завершено успешно.')
 
-    btn = Button(text="Начать игру",
-                 padx="20", pady="8", font="16", command=click_button)
-    btn.pack()
+        btn = Button(text="Начать игру",
+                     padx="20", pady="8", font="16", command=click_button)
+        btn.pack()
 
-    root.mainloop()
+        root.mainloop()
+    except BaseException:
+        print(f'Нехер кликать на кнопки во время игры.')
 
 def main(player1 : bool, player2 : bool, reset : bool):
 
@@ -126,21 +128,23 @@ def main(player1 : bool, player2 : bool, reset : bool):
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_z:  # Отменяем последний ход, нажатием на кнопку z
-                    print(f'Undo Called')
+                    gs.set_win(False)
                     gs.undoMove()
                     validMoves = gs.getValidMoves()
                     moveMade = False
                 if event.key == pygame.K_r:  # Ресетим игру, нажатием на кнопку r
                     gs.set_win(False)
                     gameOver = False
-                    print(f'Reset Called')
                     gs.reset()
                     validMoves = gs.getValidMoves()
                     moveMade = False
                     humanTurn = (not gs.get_turn() and player1) or (gs.get_turn() and player2)
                     playerClicks = []
                     cellSelected = ()
-
+                if event.key == pygame.K_F1: # смена типа игрока1
+                    player1 = not player1
+                if event.key == pygame.K_F2: # смена типа игрока2
+                    player2 = not player2
 
         # AI
         if not gameOver and not humanTurn:
@@ -156,16 +160,7 @@ def main(player1 : bool, player2 : bool, reset : bool):
             moveMade = False
 
 
-        if gs.get_win():
-            gameOver = True
-            print(f'yesssssss')
-            if not gs.get_turn():
-                print(f'1')
-                drawText(screen, 'Defenders win by the King out', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
-            else:
-                print(f'2')
-                drawText(screen, 'Attackers win by eating the King', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
-                pygame.draw
+
 
         #Отображение и GUI
         pgDrawField(screen, gs.get_turn())
@@ -174,6 +169,17 @@ def main(player1 : bool, player2 : bool, reset : bool):
 
         gs.highlightCells(screen,validMoves,cellSelected)
         gs.DrawFigures(screen)
+
+        if gs.get_win():
+            gameOver = True
+
+            if not gs.get_turn():
+
+                drawText(screen, 'Defenders win by the King out', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
+            else:
+
+                drawText(screen, 'Attackers win by eating the King', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
+                pygame.draw
 
         pygame.display.flip()
 
