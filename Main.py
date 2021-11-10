@@ -1,7 +1,3 @@
-import sys
-
-import pygame
-
 from PreProc import *
 from Engine import *
 from AI import *
@@ -13,23 +9,53 @@ def start():
     root.title("GUI на Python")
     root.geometry("300x250")
 
-    var = IntVar()
-    chk = Checkbutton(root, text='foo', variable=var)
-    chk.pack(side=LEFT)
-    var.get()  # unchecked
-    print(f'var={var}')
-    def click_button():
-        mainres = main(True, True)
-        if mainres == 0:
-            print(f'ffff')
+    global player1
+    global player2
+    player1 = True
+    player2 = False
 
-    btn = Button(text="Click Me", background="#555", foreground="#ccc",
+    def isChecked1():
+        print(f'check1')
+        global player1
+        if var1.get() == False:
+            player1 = False
+        else:
+            player1 = True
+        print(f'p1={player1}')
+
+    def isChecked2():
+        print(f'check2')
+        global player2
+        if var2.get() == False:
+            player2 = False
+        else:
+            player2 = True
+        print(f'p2={player2}')
+
+    var1 = BooleanVar()
+    chk1 = Checkbutton(root, text='Выберите, если за 1-го игрока играет ИИ', variable=var1, onvalue=True, offvalue=False, command=isChecked1)
+    chk1.deselect()
+    chk1.pack()
+
+    var2 = BooleanVar()
+    chk2 = Checkbutton(root, text='Выберите, если за 2-го игрока играет ИИ', variable=var2, onvalue=True, offvalue=False, command=isChecked2)
+    chk2.deselect()
+    chk2.pack()
+
+
+    def click_button():
+
+        mainres = main(player1, player2, False)
+        if mainres == 0:
+            print(f'Программа завершено успешно.')
+
+    btn = Button(text="Начать игру",
                  padx="20", pady="8", font="16", command=click_button)
     btn.pack()
 
     root.mainloop()
 
-def main(player1 : bool, player2 : bool):
+def main(player1 : bool, player2 : bool, reset : bool):
 
     os.environ["SDL_VIDEO_CENTERED"] = '1'
 
@@ -51,13 +77,6 @@ def main(player1 : bool, player2 : bool):
     running = True
     cellSelected = () # Флаг - выбрана ячейка или нет. Изначально ничего не выделено
     playerClicks = [] #
-    win_condition = 0
-
-
-    # Инициализируем элементы GUI
-    hlDefenders = Backlighter((0.215 * Screen_width, 0.65 * Screen_width), (0.02 * Screen_width, 0.02 * Screen_width), COLORS['ATTACKER'])
-    hlAttackers = Backlighter((0.75 * Screen_width, 0.65 * Screen_width), (0.02 * Screen_width, 0.02 * Screen_width), COLORS['DEFENDER'])
-
 
     while running:
         screen.fill(COLORS['BACKGROUND'])
@@ -105,34 +124,48 @@ def main(player1 : bool, player2 : bool):
                         else:
                             playerClicks = [cellSelected] # сохраняем последний клик, для того
 
-                # Почему-то все функции перестали работать
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_z: # Отменяем последний ход, нажатием на кнопку z
-                        gs.undoMove()
-                        validMoves = gs.getValidMoves()
-                        moveMade = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_z:  # Отменяем последний ход, нажатием на кнопку z
+                    print(f'Undo Called')
+                    gs.undoMove()
+                    validMoves = gs.getValidMoves()
+                    moveMade = False
+                if event.key == pygame.K_r:  # Ресетим игру, нажатием на кнопку r
+                    gs.set_win(False)
+                    gameOver = False
+                    print(f'Reset Called')
+                    gs.reset()
+                    validMoves = gs.getValidMoves()
+                    moveMade = False
+                    humanTurn = (not gs.get_turn() and player1) or (gs.get_turn() and player2)
+                    playerClicks = []
+                    cellSelected = ()
 
 
         # AI
         if not gameOver and not humanTurn:
             AIMove = ai.findBestMove(3, gs, validMoves, screen, clock)
-            if AIMove is None: # Если по какой-то причине не был найден оптимальный ход, то ход рандомный
+            if AIMove is None:  # Если по какой-то причине не был найден оптимальный ход, то ход рандомный
                 AIMove = ai.findRandomMove(validMoves)
-            gs.makeMove(AIMove,screen,clock,animate, True)
+            gs.makeMove(AIMove, screen, clock, animate, True)
             moveMade = True
 
+
         if moveMade:
-            # print(f'Move made')
             validMoves = gs.getValidMoves()
             moveMade = False
 
 
         if gs.get_win():
             gameOver = True
+            print(f'yesssssss')
             if not gs.get_turn():
+                print(f'1')
                 drawText(screen, 'Defenders win by the King out', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
             else:
+                print(f'2')
                 drawText(screen, 'Attackers win by eating the King', (0.36 * Screen_width, 0.64 * Screen_width), (0.3 * Screen_width, 0.1 * Screen_width), COLORS['FONT_LOWER'], int(0.025*Screen_width))
+                pygame.draw
 
         #Отображение и GUI
         pgDrawField(screen, gs.get_turn())
@@ -150,4 +183,4 @@ def main(player1 : bool, player2 : bool):
 
 if __name__ == "__main__":
     start()
-    # main(True, True)
+    # main(True, False, False)

@@ -70,7 +70,7 @@ class AI():
 
         return bestPlayerMove
 
-    @timing
+    # @timing
     def findBestMove(self,key:int, gs : GameState, validMoves,screen,clock):
         global nextMove
         nextMove = None

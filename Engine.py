@@ -77,7 +77,6 @@ class GameState():
         self.__DeleteLog = [] # запись удаленных фигур, ведется соответственно MoveLog, т.е. они одинаковой длины
 
         self.kingLocation = np.array([4,4])
-        self.__stalemate = False # не используется пока что
         self.__win = False # состояние окончания игры по причинам описанным в checkWinCondition
         self.__moveMade = False
 
@@ -86,6 +85,9 @@ class GameState():
 
     def get_win(self):
         return self.__win
+
+    def set_win(self, flag : bool):
+        self.__win = flag
 
     def get_stalemate(self):
         return self.__stalemate
@@ -152,39 +154,9 @@ class GameState():
         except IndexError:
             print(f'')
 
-        # try:
-        #     # Удаляем ход из мув лога
-        #     move = self.__MoveLog.pop()
-        #     # Восстанавливаем позиции ПЕРЕДВИНУТЫХ фигур
-        #     self.__board[move.startRow, move.startCol] = move.figureMoved
-        #     self.__board[move.endRow, move.endCol] = move.figureCaptured
-        #
-        #     # Удаляем запись из удаленных фигуру
-        #     figuresDeleted = self.__DeleteLog.pop()
-        #     #Восстанавливаем УДАЛЕННЫЕ фигуры
-        #     for figure in figuresDeleted:
-        #         self.__board[figure[0],figure[1]] = figure[3]
-        #
-        #     self.__Turn = not self.__Turn
-        #     # обновляем позицию короля назад, возможно нижние две строчки и не понадобятся, оставлю их пока что
-        #     if move.figureMoved == 1:
-        #         self.kingLocation = (move.startRow, move.startCol)
-        #
-        # except IndexError:
-        #     print(f'Нечего отменять')
-
-    # def getValidMoves(self):
-    #     # 1 Сначала создадим вообще все возможные ходы защищающихся
-    #     moves = self.getAllPossibleMoves()
-    #     # 2 Потом сделаем ход, какой хотим из всех возможных
-    #     for i in range(len(moves)-1, -1, -1): # проход по листу назад позволит избежать проеба элементов
-    #         self.makeMove(moves[i])
-    #     # 3 Создадим все ходы атакующей стороы
-    #     # 4 Среди них посмотрим, какие ходы уничтжают нашего короля
-    #     # 5 Если вообще среди 4 есть такие ходы, то наш ход 3 надо запретить,
-    #     # и так для всех ходов среди 1
-    #
-    #     return moves
+    def reset(self):
+        for i in range(len(self.__MoveLog)):
+            self.undoMove()
 
     def getValidMoves(self):
         return self.getAllPossibleMoves()

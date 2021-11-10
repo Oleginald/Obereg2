@@ -8,6 +8,7 @@ from tkinter import *
 import copy
 from functools import wraps
 from time import time
+from multiprocessing import Queue, Process
 
 # Все цвета используемые для отображения
 COLORS = {'BACKGROUND':[26,5,80], 'BACK_RECT' : [63,7,98], 'LINE' : [221,7,232], 'EXIT_RECT' : [95,111,224],
