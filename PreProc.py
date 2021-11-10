@@ -1,7 +1,9 @@
 import numpy as np
+import os
+from os import environ
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame
 from win32api import GetSystemMetrics
-import os
 import sys
 from copy import deepcopy, copy
 from tkinter import *
