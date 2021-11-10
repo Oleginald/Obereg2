@@ -6,8 +6,8 @@ def start():
     '''Начальное окно взаимодействия с пользователем'''
     try:
         root = Tk()
-        root.title("GUI на Python")
-        root.geometry("300x250")
+        root.title("Obereg launcher")
+        root.geometry("300x120")
 
         global player1
         global player2
@@ -15,22 +15,21 @@ def start():
         player2 = True
 
         def isChecked1():
-            print(f'check1')
+
             global player1
             if var1.get() == True:
                 player1 = False
             else:
                 player1 = True
-            print(f'p1={player1}')
 
         def isChecked2():
-            print(f'check2')
+
             global player2
             if var2.get() == True:
                 player2 = False
             else:
                 player2 = True
-            print(f'p2={player2}')
+
 
         var1 = BooleanVar()
         chk1 = Checkbutton(root, text='Выберите, если за 1-го игрока играет ИИ', variable=var1, onvalue=True, offvalue=False, command=isChecked1)
@@ -47,6 +46,7 @@ def start():
 
             mainres = main(player1, player2, False)
             if mainres == 0:
+                sys.exit()
                 print(f'Программа завершено успешно.')
 
         btn = Button(text="Начать игру",
@@ -55,7 +55,7 @@ def start():
 
         root.mainloop()
     except BaseException:
-        print(f'Нехер кликать на кнопки во время игры.')
+        print(f'')
 
 def main(player1 : bool, player2 : bool, reset : bool):
 
@@ -66,6 +66,7 @@ def main(player1 : bool, player2 : bool, reset : bool):
     screen = pygame.display.set_mode((Screen_width, Screen_height))
     clock = pygame.time.Clock()
 
+    pygame.display.set_icon(IMAGES['king'])
     pygame.display.update()
 
     gs = GameState()
