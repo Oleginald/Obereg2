@@ -130,6 +130,7 @@ def main(player1 : bool, player2 : bool, reset : bool):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_z:  # Отменяем последний ход, нажатием на кнопку z
                     gs.set_win(False)
+                    gameOver = False
                     gs.undoMove()
                     validMoves = gs.getValidMoves()
                     moveMade = False
